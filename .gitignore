@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.RData
+.httr-oauth
+Data
+connectgbq.R
+connectscp.R
+enrol.RData
+mcsntt.RData
+mcsnttdt.RData
+microcred-keypair
+param
+test.RData
