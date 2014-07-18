@@ -207,9 +207,49 @@ ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
 # * loan disbursements: # of customers, # of disbursements, value of disbursements
 # * loan repayments: # of customers, # of payments, value of payments
 
-## Load loan file
-loandf <- query_exec(project, dataset, sql, billing = project)
-loandt <- data.table(loandf)
-flist <- colnames(loandt)
+# Load loan file
+loandt <- data.table(query_exec(project, dataset, sql, billing = project))
 # ReadJoinLoanData <- function(tt, loan)
-fresult <- merge(ttresult, loandt, by = "YearMonth")
+ttresult <- merge(ttresult, loandt, by = "YearMonth")
+
+
+## * current accounts: # of loan customers with current accounts
+temp <- ddply(bqcusloandt[CustomerStatus == "With Loan" & Current > 0], .(YearMonth), summarize,
+              LoanCurrentCustomerCount = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+
+#   * # of customers, # cash ins, and value of cash ins, 
+temp <- ddply(ttdt[DrCrMarker == "CREDIT" & Category == 7313 & CustomerStatus == "With Loan"], .(YearMonth), summarize,
+              LoanCurrentCashInAmount = sum(NetAmount), 
+              LoanCurrentCashInCount = length(YearMonth),
+              LoanCurrentCashInCustomer = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+
+#   * # of customers, # of cash outs, and value of cash outs
+temp <- ddply(ttdt[DrCrMarker == "DEBIT" & Category == 7313 & CustomerStatus == "With Loan"], .(YearMonth), summarize,
+              LoanCurrentCashOutAmount = sum(NetAmount), 
+              LoanCurrentCashOutCount = length(YearMonth),
+              LoanCurrentCashOutCustomer = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+
+## * savings accounts: # of loan customers with savings accounts 
+temp <- ddply(bqcusloandt[CustomerStatus == "With Loan" & Savings > 0], .(YearMonth), summarize,
+              LoanSavingsCustomerCount = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+
+#   * # of customers, # cash ins, and value of cash ins
+temp <- ddply(ttdt[DrCrMarker == "CREDIT" & Category != 7313 & CustomerStatus == "With Loan"], .(YearMonth), summarize,
+              LoanSavingsCashInAmount = sum(NetAmount), 
+              LoanSavingsCashInCount = length(YearMonth),
+              LoanSavingsCashInCustomer = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+
+#   * # of customers, # of cash outs, and value of cash outs
+temp <- ddply(ttdt[DrCrMarker == "DEBIT" & Category != 7313 & CustomerStatus == "With Loan"], .(YearMonth), summarize,
+              LoanSavingsCashOutAmount = sum(NetAmount), 
+              LoanSavingsCashOutCount = length(YearMonth),
+              LoanSavingsCashOutCustomer = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+
+
+
