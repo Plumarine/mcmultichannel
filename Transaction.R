@@ -232,6 +232,7 @@ temp <- ddply(ttdt[DrCrMarker == "DEBIT" & Category == 7313 & CustomerStatus == 
               LoanCurrentCashOutCustomer = length(unique(Customer1)))
 ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
 
+
 ## * savings accounts: # of loan customers with savings accounts 
 temp <- ddply(bqcusloandt[CustomerStatus == "With Loan" & Savings > 0], .(YearMonth), summarize,
               LoanSavingsCustomerCount = length(unique(Customer1)))
@@ -251,5 +252,50 @@ temp <- ddply(ttdt[DrCrMarker == "DEBIT" & Category != 7313 & CustomerStatus == 
               LoanSavingsCashOutCustomer = length(unique(Customer1)))
 ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
 
+# Customers without loans
+# * Total number of unique customers without loans who have either a savings or a current account.
+temp <- ddply(bqcusloandt[CustomerStatus == "With No Loan"], .(YearMonth), summarize,
+              NoLoanCustomerCount = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
 
+# * current accounts: # of customers with current accounts 
+temp <- ddply(bqcusloandt[CustomerStatus == "With No Loan" & Current > 0], .(YearMonth), summarize,
+              NoLoanCurrentCustomerCount = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+
+#   * # of customers, # cash ins, and value of cash ins, 
+temp <- ddply(ttdt[DrCrMarker == "CREDIT" & Category == 7313 & CustomerStatus == "With No Loan"], .(YearMonth), summarize,
+              NoLoanCurrentCashInAmount = sum(NetAmount), 
+              NoLoanCurrentCashInCount = length(YearMonth),
+              NoLoanCurrentCashInCustomer = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+
+#   * # of customers, # of cash outs, and value of cash outs
+temp <- ddply(ttdt[DrCrMarker == "DEBIT" & Category == 7313 & CustomerStatus == "With No Loan"], .(YearMonth), summarize,
+              NoLoanCurrentCashOutAmount = sum(NetAmount), 
+              NoLoanCurrentCashOutCount = length(YearMonth),
+              NoLoanCurrentCashOutCustomer = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+
+## * savings accounts: # of loan customers with savings accounts 
+temp <- ddply(bqcusloandt[CustomerStatus == "With No Loan" & Savings > 0], .(YearMonth), summarize,
+              NoLoanSavingsCustomerCount = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+
+#   * # of customers, # cash ins, and value of cash ins
+temp <- ddply(ttdt[DrCrMarker == "CREDIT" & Category != 7313 & CustomerStatus == "With No Loan"], .(YearMonth), summarize,
+              NoLoanSavingsCashInAmount = sum(NetAmount), 
+              NoLoanSavingsCashInCount = length(YearMonth),
+              NoLoanSavingsCashInCustomer = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+
+#   * # of customers, # of cash outs, and value of cash outs
+temp <- ddply(ttdt[DrCrMarker == "DEBIT" & Category != 7313 & CustomerStatus == "With No Loan"], .(YearMonth), summarize,
+              NoLoanSavingsCashOutAmount = sum(NetAmount), 
+              NoLoanSavingsCashOutCount = length(YearMonth),
+              NoLoanSavingsCashOutCustomer = length(unique(Customer1)))
+ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
+  
+  
+  
 
