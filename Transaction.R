@@ -204,22 +204,12 @@ ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
 
 ##Customer with Loans
 # * Total # of customers with loans
-# temp <- ddply(bqcusloandt[])
-
 # * loan disbursements: # of customers, # of disbursements, value of disbursements
-#   * loan repayments: # of customers, # of payments, value of payments
-#   
-#   * current accounts: # of loan customers with current accounts 
-  
-
-
-
+# * loan repayments: # of customers, # of payments, value of payments
 
 ## Load loan file
 loandf <- query_exec(project, dataset, sql, billing = project)
 loandt <- data.table(loandf)
 flist <- colnames(loandt)
-
-## ReadJoinLoanData <- function(tt, loan)
-
+# ReadJoinLoanData <- function(tt, loan)
 fresult <- merge(ttresult, loandt, by = "YearMonth")
