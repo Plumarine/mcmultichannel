@@ -13,18 +13,27 @@ mccompany <- "MCMG"
 
 if (mccompany == "MCSE") {
 
-  sql <- 'SELECT a.YearMonth, a.LoanDisbursed, a.DisbAmount, b.ActiveLoan, b.LoanAmountPaid
+  sql <- 'SELECT disb.YearMonth YearMonth, disb.DisbCustomerCount DisbCustomerCount, disb.DisbLoanCount DisbLoanCount, disb.DisbAmount DisbAmount, loan.active.WithLoanCustomerCount WithLoanCustomerCount, loan.active.ActiveLoanCount ActiveLoanCount, loan.payment.PaymentCustomerCount PaymentCustomerCount, loan.payment.PaymentDayCount PaymentDayCount, loan.payment.PaymentAmount PaymentAmount
 FROM
-(SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(LoanLocalCode) LoanDisbursed, SUM(LoanDisbursedAmount) DisbAmount
+(SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT CustomerLocalID, 90000) DisbCustomerCount, COUNT(LoanLocalCode) DisbLoanCount, SUM(LoanDisbursedAmount) DisbAmount
   FROM [mcr_dw.materialized_fact_loans_mcse]
   WHERE (LoanOpeningDate=DateData)
-  GROUP BY 1) a
+  GROUP BY 1) disb
   JOIN
-  (SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT LoanLocalCode, 90000) ActiveLoan, SUM(LoanChargesPaid)+SUM(LoanInterestsPaid)+SUM(LoanCapitalPaid) LoanAmountPaid
+  (SELECT *
+  FROM
+  (SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT CustomerLocalID, 90000) WithLoanCustomerCount, COUNT(DISTINCT LoanLocalCode, 90000) ActiveLoanCount
   FROM [mcr_dw.materialized_fact_loans_mcse]
   WHERE (LoanStatus = "LIVING") OR (LoanStatus = "MATURED")
-  GROUP BY 1) b
-  ON a.YearMonth=b.YearMonth
+  GROUP BY 1) active
+  JOIN
+  (SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT CustomerLocalID, 90000) PaymentCustomerCount, COUNT(DateData) PaymentDayCount, SUM(LoanChargesPaid)+SUM(LoanInterestsPaid)+SUM(LoanCapitalPaid) PaymentAmount
+  FROM [mcr_dw.materialized_fact_loans_mcse]
+  WHERE LoanChargesPaid + LoanInterestsPaid + LoanCapitalPaid > 0
+  GROUP BY 1) payment
+  ON active.YearMonth = payment.YearMonth
+  ) loan
+  ON disb.YearMonth=loan.active.YearMonth
   ORDER BY 1;'
   
   sql2 <- 'SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, CustomerLocalID, CustomerStatus, COUNT(REGEXP_EXTRACT(SavingType, "(CURRENT)")) Current, COUNT(REGEXP_EXTRACT(SavingType, "(SAVINGS)")) Savings, COUNT(DateData)
@@ -37,18 +46,27 @@ ORDER BY 1, 2, 3;'
 
   acfile <- "Data/Transaction/MCSN/ACCOUNT_140606.txt"
 } else if (mccompany == "MCMG") {
-  sql <- 'SELECT a.YearMonth, a.LoanDisbursed, a.DisbAmount, b.ActiveLoan, b.LoanAmountPaid
+  sql <- 'SELECT disb.YearMonth YearMonth, disb.DisbCustomerCount DisbCustomerCount, disb.DisbLoanCount DisbLoanCount, disb.DisbAmount DisbAmount, loan.active.WithLoanCustomerCount WithLoanCustomerCount, loan.active.ActiveLoanCount ActiveLoanCount, loan.payment.PaymentCustomerCount PaymentCustomerCount, loan.payment.PaymentDayCount PaymentDayCount, loan.payment.PaymentAmount PaymentAmount
 FROM
-(SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(LoanLocalCode) LoanDisbursed, SUM(LoanDisbursedAmount) DisbAmount
+(SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT CustomerLocalID, 90000) DisbCustomerCount, COUNT(LoanLocalCode) DisbLoanCount, SUM(LoanDisbursedAmount) DisbAmount
   FROM [mcr_dw.materialized_fact_loans_mcmd]
   WHERE (LoanOpeningDate=DateData)
-  GROUP BY 1) a
+  GROUP BY 1) disb
   JOIN
-  (SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT LoanLocalCode, 90000) ActiveLoan, SUM(LoanChargesPaid)+SUM(LoanInterestsPaid)+SUM(LoanCapitalPaid) LoanAmountPaid
+  (SELECT *
+  FROM
+  (SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT CustomerLocalID, 90000) WithLoanCustomerCount, COUNT(DISTINCT LoanLocalCode, 90000) ActiveLoanCount
   FROM [mcr_dw.materialized_fact_loans_mcmd]
   WHERE (LoanStatus = "LIVING") OR (LoanStatus = "MATURED")
-  GROUP BY 1) b
-  ON a.YearMonth=b.YearMonth
+  GROUP BY 1) active
+  JOIN
+  (SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT CustomerLocalID, 90000) PaymentCustomerCount, COUNT(DateData) PaymentDayCount, SUM(LoanChargesPaid)+SUM(LoanInterestsPaid)+SUM(LoanCapitalPaid) PaymentAmount
+  FROM [mcr_dw.materialized_fact_loans_mcmd]
+  WHERE LoanChargesPaid + LoanInterestsPaid + LoanCapitalPaid > 0
+  GROUP BY 1) payment
+  ON active.YearMonth = payment.YearMonth
+  ) loan
+  ON disb.YearMonth=loan.active.YearMonth
   ORDER BY 1;'
   
   # This is the SQL command to get if a customer has a loan in a month
@@ -184,12 +202,23 @@ temp <- ddply(ttdt[DrCrMarker == "DEBIT" & Category == 7313], .(YearMonth), summ
               CurrentCashOutCustomer = length(unique(Customer1)))
 ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
 
+##Customer with Loans
+# * Total # of customers with loans
+# temp <- ddply(bqcusloandt[])
+
+# * loan disbursements: # of customers, # of disbursements, value of disbursements
+#   * loan repayments: # of customers, # of payments, value of payments
+#   
+#   * current accounts: # of loan customers with current accounts 
+  
+
+
+
+
 ## Load loan file
 loandf <- query_exec(project, dataset, sql, billing = project)
 loandt <- data.table(loandf)
 flist <- colnames(loandt)
-nlist <- gsub("[a-z]_", "", flist)
-setnames(loandt, flist, nlist)
 
 ## ReadJoinLoanData <- function(tt, loan)
 
