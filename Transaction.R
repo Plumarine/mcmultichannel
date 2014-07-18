@@ -27,9 +27,9 @@ FROM
   WHERE (LoanStatus = "LIVING") OR (LoanStatus = "MATURED")
   GROUP BY 1) active
   JOIN
-  (SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT CustomerLocalID, 90000) PaymentCustomerCount, COUNT(DateData) PaymentDayCount, SUM(LoanChargesPaid)+SUM(LoanInterestsPaid)+SUM(LoanCapitalPaid) PaymentAmount
+  (SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT CustomerLocalID, 90000) PaymentCustomerCount, COUNT(DateData) PaymentDayCount, SUM(LoanChargesPaid)+SUM(LoanInterestsPaid)+SUM(LoanCapitalPaid)+SUM(LoanPenalitySpreadPaid)+SUM(LoanPenalityPaid) PaymentAmount
   FROM [mcr_dw.materialized_fact_loans_mcse]
-  WHERE LoanChargesPaid + LoanInterestsPaid + LoanCapitalPaid > 0
+  WHERE LoanChargesPaid + LoanInterestsPaid + LoanCapitalPaid + LoanPenalitySpreadPaid + LoanPenalityPaid> 0
   GROUP BY 1) payment
   ON active.YearMonth = payment.YearMonth
   ) loan
@@ -60,9 +60,9 @@ FROM
   WHERE (LoanStatus = "LIVING") OR (LoanStatus = "MATURED")
   GROUP BY 1) active
   JOIN
-  (SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT CustomerLocalID, 90000) PaymentCustomerCount, COUNT(DateData) PaymentDayCount, SUM(LoanChargesPaid)+SUM(LoanInterestsPaid)+SUM(LoanCapitalPaid) PaymentAmount
+  (SELECT STRFTIME_UTC_USEC(DateData, "%Y-%m") YearMonth, COUNT(DISTINCT CustomerLocalID, 90000) PaymentCustomerCount, COUNT(DateData) PaymentDayCount, SUM(LoanChargesPaid)+SUM(LoanInterestsPaid)+SUM(LoanCapitalPaid)+SUM(LoanPenalitySpreadPaid)+SUM(LoanPenalityPaid) PaymentAmount
   FROM [mcr_dw.materialized_fact_loans_mcmd]
-  WHERE LoanChargesPaid + LoanInterestsPaid + LoanCapitalPaid > 0
+  WHERE LoanChargesPaid + LoanInterestsPaid + LoanCapitalPaid + LoanPenalitySpreadPaid + LoanPenalityPaid> 0
   GROUP BY 1) payment
   ON active.YearMonth = payment.YearMonth
   ) loan
@@ -295,7 +295,4 @@ temp <- ddply(ttdt[DrCrMarker == "DEBIT" & Category != 7313 & CustomerStatus == 
               NoLoanSavingsCashOutCount = length(YearMonth),
               NoLoanSavingsCashOutCustomer = length(unique(Customer1)))
 ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
-  
-  
-  
 
