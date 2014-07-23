@@ -1,18 +1,17 @@
-## This is for MCSN
 ## Load and prepare data
 setwd("/home/szhang/MultiChannel/")
 source("lib.R")
 # Input and parameters
-daterange <- seq(as.Date("2014-05-26"), as.Date(ydate()[2]), by = "day")
-filedir <- "Data/EnrolmentDaily/MCSN/"
+daterange <- seq(as.Date("2014-07-22"), as.Date(ydate()[2]), by = "day")
+filedir <- "Data/EnrolmentDaily/MCMG"
 filelist <- list.files(filedir)
-pcusfile <- "Data/mcsnbiopriority.csv"
-param <- dget("param")
+#pcusfile <- "Data/mcmgbiopriority.csv"
+param <- dget("parammcmg")
 
 # Output files
-outfile <- "Output/MCSNEnrollmentData.csv"
-poutfile <- paste0("Output/MCSN PriorityCustomer", ydate()[1], ".csv")
-exoutfile <- paste0("Output/MCSN ExceptionalCustomer", ydate()[1], ".csv")
+outfile <- "Output/MCMGEnrollmentData.csv"
+#poutfile <- paste0("Output/MCMG PriorityCustomer", ydate()[1], ".csv")
+exoutfile <- paste0("Output/MCMG ExceptionalCustomer", ydate()[1], ".csv")
 
 ## Initialize the data
 cusdt <- data.table()
@@ -20,7 +19,7 @@ daodt <- data.table()
 branchdt <- data.table()
 
 # Read tables
-load("enrol.RData")
+load("enrolMCMG.RData")
 
 for (file in filelist) {
   filepath <- paste(filedir, file, sep = "")
@@ -120,23 +119,23 @@ for (date in daterange) {
 EnrolmentReport <- merge(agrdf, DAOBranch, by = "LocalDAO", all.x = TRUE)
 
 #############################
-## Create the report with priority list
-cusdt[, LatestVerNo := max(CurrNo), by = CustomerLocalId]
-cusdt[, Latest := LatestVerNo == CurrNo]
-livecusdt <- cusdt[Latest == TRUE, list(CustomerLocalId, BioEnrolStat, ConfTelNo, BioEnrollFlag, BioEnrollDate, UpdateTime)]
-
-pflist <- c("CORRESPONDANT", "CLIENT NR")
-npflist <- c("Correspondant", "CustomerLocalId")
-pcusdt <- fread(pcusfile, header = TRUE, na.strings = "", stringsAsFactors = F, 
-                colClasses = c("CLIENT NR" = "character"))
-setnames(pcusdt, pflist, npflist)
-pcusdt <- merge(pcusdt, livecusdt, by = "CustomerLocalId", all.x = TRUE)
-
-# Flag the status of enrolment
-pcusdt[!is.na(ConfTelNo) & BioEnrollFlag == "Y" & BioEnrolStat == "UNLOCKED", EnrollStatus := "ENROLLED"]
-pcusdt[is.na(ConfTelNo) & (is.na(BioEnrollFlag) | BioEnrollFlag == "N" ) & is.na(BioEnrolStat), 
-       EnrollStatus := "NOT"]
-pcusdt[is.na(EnrollStatus), EnrollStatus := "EXCEPTION"]
+# ## Create the report with priority list
+# cusdt[, LatestVerNo := max(CurrNo), by = CustomerLocalId]
+# cusdt[, Latest := LatestVerNo == CurrNo]
+# livecusdt <- cusdt[Latest == TRUE, list(CustomerLocalId, BioEnrolStat, ConfTelNo, BioEnrollFlag, BioEnrollDate, UpdateTime)]
+# 
+# pflist <- c("CORRESPONDANT", "CLIENT NR")
+# npflist <- c("Correspondant", "CustomerLocalId")
+# pcusdt <- fread(pcusfile, header = TRUE, na.strings = "", stringsAsFactors = F, 
+#                 colClasses = c("CLIENT NR" = "character"))
+# setnames(pcusdt, pflist, npflist)
+# pcusdt <- merge(pcusdt, livecusdt, by = "CustomerLocalId", all.x = TRUE)
+# 
+# # Flag the status of enrolment
+# pcusdt[!is.na(ConfTelNo) & BioEnrollFlag == "Y" & BioEnrolStat == "UNLOCKED", EnrollStatus := "ENROLLED"]
+# pcusdt[is.na(ConfTelNo) & (is.na(BioEnrollFlag) | BioEnrollFlag == "N" ) & is.na(BioEnrolStat), 
+#        EnrollStatus := "NOT"]
+# pcusdt[is.na(EnrollStatus), EnrollStatus := "EXCEPTION"]
 
 
 ########################################
@@ -187,8 +186,8 @@ cusHalfEnrol <- cusHalfEnrol[, flist2, with = F]
 
 #############################
 ## Output
-save(cusdt, daodt, branchdt, file = "enrol.RData")
-dput(param, "param")
+save(cusdt, daodt, branchdt, file = "enrolMCMG.RData")
+dput(param, "parammcmg")
 write.csv(EnrolmentReport, outfile, row.names = F)
 write.csv(cusHalfEnrol, exoutfile, row.names = F)
-write.csv(pcusdt, poutfile, row.names = F)
+# write.csv(pcusdt, poutfile, row.names = F)

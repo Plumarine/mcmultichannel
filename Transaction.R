@@ -11,7 +11,7 @@ dataset <- param$bqdataset
 
 mccompany <- "MCMG"
 
-if (mccompany == "MCSE") {
+if (mccompany == "MCSN") {
 
   sql <- 'SELECT disb.YearMonth YearMonth, disb.DisbCustomerCount DisbCustomerCount, disb.DisbLoanCount DisbLoanCount, disb.DisbAmount DisbAmount, loan.active.WithLoanCustomerCount WithLoanCustomerCount, loan.active.ActiveLoanCount ActiveLoanCount, loan.payment.PaymentCustomerCount PaymentCustomerCount, loan.payment.PaymentDayCount PaymentDayCount, loan.payment.PaymentAmount PaymentAmount
 FROM
@@ -203,6 +203,7 @@ temp <- ddply(ttdt[DrCrMarker == "DEBIT" & Category == 7313], .(YearMonth), summ
 ttresult <- merge(ttresult, temp, by = "YearMonth", all.x = T)
 
 ##Customer with Loans
+#===========================
 # * Total # of customers with loans
 # * loan disbursements: # of customers, # of disbursements, value of disbursements
 # * loan repayments: # of customers, # of payments, value of payments
