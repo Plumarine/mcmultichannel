@@ -7,22 +7,38 @@ LoadCustomer <- function(cusfile, safeMode = FALSE) {
   # Select fields needed
   flist <- c("@ID",
              "OPENING.DATE",
+             "SHORT.NAME",
+             "NAME.1",
+             "TEL.MOBILE",
              "ACCOUNT.OFFICER",
              "BIO.ENROL.STAT",
              "CONF.TEL.NO",
              "BIO.ENROLL.FLAG",
              "BIO.ENROLL.DATE",
              "DATE.TIME",
+             "INPUTTER",
+             "AUTHORISER",
              "CURR.NO")
   nlist <- c("Id", 
              "OpeningDate", 
-             "AccountOfficer", 
+             "FirstName",
+             "LastName",
+             "TelMobile",
+             "LocalDAO", 
              "BioEnrolStat", 
              "ConfTelNo", 
              "BioEnrollFlag", 
              "BioEnrollDate", 
              "DateTime", 
+             "Enroller",
+             "Verifier",
              "CurrNo")
+  colclass <- c(ACCOUNT.OFFICER = "character", 
+                BIO.ENROL.STAT = "character", 
+                BIO.ENROLL.FLAG = "character", 
+                CONF.TEL.NO = "character")
+  
+  
   if (safeMode) {
     # In case some tables cannot be read by fread.
     flist2 <- flist
@@ -33,11 +49,8 @@ LoadCustomer <- function(cusfile, safeMode = FALSE) {
     
   } else {
     cusdt <- fread(cusfile, header = TRUE, sep = "^", na.strings = "", stringsAsFactors = FALSE, 
-                   select = flist, colClasses = c(CONF.TEL.NO = "character"))
+                   select = flist, colClasses = colclass)
   }
-  
-  cusdt <- cusdt[, flist, with = F]
-  cusdt_copy <- cusdt[, flist, with = F]
   
   # preprocess the data table
   cusdt[, CustomerLocalId := gsub(";.+", "", cusdt[["@ID"]])]
@@ -51,11 +64,15 @@ LoadCustomer <- function(cusfile, safeMode = FALSE) {
   cusdt[, BIO.ENROLL.FLAG := as.factor(BIO.ENROLL.FLAG)]
   cusdt[, BIO.ENROL.STAT := as.factor(BIO.ENROL.STAT)]
   
-  cusdt[, CONF.TEL.NO := as.character(CONF.TEL.NO)]
+  #cusdt[, CONF.TEL.NO := as.character(CONF.TEL.NO)]
+  
+  cusdt[, INPUTTER := gsub("([0-9]+_)|(___.+)", "", INPUTTER)]
+  cusdt[, AUTHORISER := gsub("([0-9]+_)|(_OFS.+)", "", AUTHORISER)]
   
   setnames(cusdt, flist, nlist)
   
   cusdt[, CurrNo := as.numeric(CurrNo)]
+  
   #Setup keys
   setkey(cusdt)
   
@@ -133,8 +150,6 @@ LoadCustomerInfo <- function(cusfile) {
 ## Load DAO files
 LoadDAO <- function(daofile) {
   ## Load DAO table
-  daodt <- fread(daofile, header = TRUE, sep = "^", na.strings = "", stringsAsFactors = F)
-  
   flist <- c("@ID",
              "NAME",
              "BRANCH.LOC",
@@ -145,11 +160,14 @@ LoadDAO <- function(daofile) {
              "BranchId",
              "DateTime",
              "CurrNo")
-  
-  daodt <- daodt[, flist, with = F]
-  daodt_copy <- daodt[, flist, with = F]
+  colclass <- c(BRANCH.LOC = "character", 
+                DATE.TIME = "character",
+                CURR.NO = "numeric")
+  daodt <- fread(daofile, header = TRUE, sep = "^", na.strings = "", stringsAsFactors = F, 
+                 select = flist, colClasses = colclass)
   
   setnames(daodt, flist, nlist)
+  
   # preprocess
   daodt[, DAO := gsub(";.+", "", daodt[["Id"]])]
   
