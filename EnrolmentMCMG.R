@@ -2,8 +2,8 @@
 setwd("/home/szhang/MultiChannel/")
 source("lib.R")
 # Input and parameters
-daterange <- seq(as.Date("2014-07-22"), as.Date(ydate()[2]), by = "day")
-filedir <- "Data/EnrolmentDaily/MCMG"
+daterange <- seq(as.Date("2014-07-21"), as.Date(ydate()[2]), by = "day")
+filedir <- "Data/EnrolmentDaily/MCMG/"
 filelist <- list.files(filedir)
 #pcusfile <- "Data/mcmgbiopriority.csv"
 param <- dget("parammcmg")
