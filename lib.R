@@ -2,7 +2,7 @@ library(data.table)
 library(plyr)
 
 # Load Customer into data table
-LoadCustomer <- function(cusfile) {
+LoadCustomer <- function(cusfile, safeMode = FALSE) {
   
   # Select fields needed
   flist <- c("@ID",
@@ -23,9 +23,18 @@ LoadCustomer <- function(cusfile) {
              "BioEnrollDate", 
              "DateTime", 
              "CurrNo")
-  
-  cusdt <- fread(cusfile, header = TRUE, sep = "^", na.strings = "", stringsAsFactors = F, 
-                 select = flist, colClasses = c(CONF.TEL.NO = "character"))
+  if (safeMode) {
+    # In case some tables cannot be read by fread.
+    flist2 <- flist
+    flist2[1] <- "X.ID"
+    cusdt <- data.table(read.table(cusfile, header = TRUE, sep = "^", quote = "", na.strings = "", 
+               colClasses = "character", stringsAsFactors = FALSE)[flist2])
+    setnames(cusdt, "X.ID", "@ID")
+    
+  } else {
+    cusdt <- fread(cusfile, header = TRUE, sep = "^", na.strings = "", stringsAsFactors = FALSE, 
+                   select = flist, colClasses = c(CONF.TEL.NO = "character"))
+  }
   
   cusdt <- cusdt[, flist, with = F]
   cusdt_copy <- cusdt[, flist, with = F]
@@ -45,6 +54,8 @@ LoadCustomer <- function(cusfile) {
   cusdt[, CONF.TEL.NO := as.character(CONF.TEL.NO)]
   
   setnames(cusdt, flist, nlist)
+  
+  cusdt[, CurrNo := as.numeric(CurrNo)]
   #Setup keys
   setkey(cusdt)
   

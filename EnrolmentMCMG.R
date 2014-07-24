@@ -26,7 +26,7 @@ for (file in filelist) {
   
   if (grepl("CUSTOMER.+", file) & !(file %in% param$cuslist)) {
     # Process Customer data
-    newdata <- LoadCustomer(filepath)
+    newdata <- LoadCustomer(filepath, safeMode = TRUE)
     cusdt <- MergeTable(cusdt, newdata, mkey = "Id")
     param$cuslist <- c(param$cuslist, file)
   }
