@@ -20,7 +20,7 @@ daodt <- data.table()
 branchdt <- data.table()
 
 # Read tables
-load("enrol.RData")
+load("enrolMCSN.RData")
 
 for (file in filelist) {
   filepath <- paste(filedir, file, sep = "")
@@ -69,7 +69,7 @@ for (date in daterange) {
   # Note: this only means when the customer join MC, which DAO it belongs
   # Customer's aquisition
   cusdtsub1 <- cusdt[OpeningDate <= date & CurrNo == 1, ]
-  cusdtsub1[, TotalCustomer := length(CustomerLocalId), by = AccountOfficer]
+  cusdtsub1[, TotalCustomer := length(CustomerLocalId), by = LocalDAO]
   
   # There is an issue here, when calculate total enrolled customer, if the customer's DAO is updated
   # It it can be calculated multiple times in different DAOs, this has been solved!
@@ -81,12 +81,12 @@ for (date in daterange) {
     cusdtsub2[, LatestVerNo := max(CurrNo), by = CustomerLocalId]
     cusdtsub2[, Latest := LatestVerNo == CurrNo]
     cusdtsub2 <- cusdtsub2[Latest == TRUE, ]
-    cusdtsub2[, TotalEnrolled := length(unique(CustomerLocalId)), by = AccountOfficer]
+    cusdtsub2[, TotalEnrolled := length(unique(CustomerLocalId)), by = LocalDAO]
   }
   
   # Initialize the DAOs for that day
-  dao1 <- unique(cusdtsub1$AccountOfficer)
-  dao2 <- unique(cusdtsub2$AccountOfficer)
+  dao1 <- unique(cusdtsub1$LocalDAO)
+  dao2 <- unique(cusdtsub2$LocalDAO)
   daos <- unique(c(dao1, dao2))
   for (dao in daos) {
     # Build each column in this table
@@ -96,8 +96,8 @@ for (date in daterange) {
     
     # Total Customer and new customer
     if (dao %in% dao1) {
-      agrdf[i, "TotalCustomer"] <- cusdtsub1[AccountOfficer == dao, "TotalCustomer", with = F][[1, 1]]
-      agrdf[i, "NewCustomer"] <- length(cusdtsub1[OpeningDate == date & AccountOfficer == dao, ]$CustomerLocalId)
+      agrdf[i, "TotalCustomer"] <- cusdtsub1[LocalDAO == dao, "TotalCustomer", with = F][[1, 1]]
+      agrdf[i, "NewCustomer"] <- length(cusdtsub1[OpeningDate == date & LocalDAO == dao, ]$CustomerLocalId)
     } else {
       agrdf[i, "TotalCustomer"] <- 0
       agrdf[i, "NewCustomer"] <- 0
@@ -105,8 +105,8 @@ for (date in daterange) {
     
     # Total Enrolled customer and New Enrolled Customer
     if (dao %in% dao2) {
-      agrdf[i, "TotalEnrolled"] <- cusdtsub2[AccountOfficer == dao, "TotalEnrolled", with = F][[1, 1]]  
-      agrdf[i, "NewEnrolled"] <- length(unique(cusdtsub2[BioEnrollDate == date & AccountOfficer == dao, ]$CustomerLocalId))
+      agrdf[i, "TotalEnrolled"] <- cusdtsub2[LocalDAO == dao, "TotalEnrolled", with = F][[1, 1]]  
+      agrdf[i, "NewEnrolled"] <- length(unique(cusdtsub2[BioEnrollDate == date & LocalDAO == dao, ]$CustomerLocalId))
     } else {
       agrdf[i, "TotalEnrolled"] <- 0
       agrdf[i, "NewEnrolled"] <- 0
@@ -187,7 +187,7 @@ cusHalfEnrol <- cusHalfEnrol[, flist2, with = F]
 
 #############################
 ## Output
-save(cusdt, daodt, branchdt, file = "enrol.RData")
+save(cusdt, daodt, branchdt, file = "enrolMCSN.RData")
 dput(param, "param")
 write.csv(EnrolmentReport, outfile, row.names = F)
 write.csv(cusHalfEnrol, exoutfile, row.names = F)
