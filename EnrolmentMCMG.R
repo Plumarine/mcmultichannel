@@ -61,6 +61,8 @@ livecusdt[!is.na(ConfTelNo) & BioEnrollFlag == "Y" & BioEnrolStat == "UNLOCKED",
 livecusdt[is.na(ConfTelNo) & (is.na(BioEnrollFlag) | BioEnrollFlag == "N" ) & is.na(BioEnrolStat), EnrollStatus := "NOT"]
 livecusdt[is.na(EnrollStatus), EnrollStatus := "EXCEPTION"]
 
+livecusdt[, EnrollStatus := as.factor(EnrollStatus)]
+
 # Merge the DAO and Branch info
 EnrolmentReport <- merge(livecusdt, DAOBranch, by = "LocalDAO", all.x = TRUE)
 
@@ -90,5 +92,5 @@ EnrolmentReport <- EnrolmentReport[, flist2, with = FALSE]
 ## Output
 save(cusdt, daodt, branchdt, file = "enrolMCMG.RData")
 dput(param, "parammcmg")
-write.csv(EnrolmentReport, outfile, row.names = F)
+write.csv(EnrolmentReport, outfile, na = "", row.names = FALSE)
 # write.csv(pcusdt, poutfile, row.names = F)
